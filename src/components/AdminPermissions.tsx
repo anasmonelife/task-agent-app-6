@@ -45,6 +45,7 @@ interface TeamMember {
   name: string;
   role: string;
   email?: string;
+  phone?: string;
   panchayath_id: string;
   created_at: string;
   updated_at: string;
@@ -86,6 +87,7 @@ const AdminPermissions = () => {
     agent_id: '',
     permission_id: ''
   });
+  const [teamMemberSearch, setTeamMemberSearch] = useState('');
   const { toast } = useToast();
 
   const categories = [
@@ -148,22 +150,9 @@ const AdminPermissions = () => {
       if (teamMembersError) throw teamMembersError;
       setTeamMembers(teamMembersData || []);
 
-      // Fetch team permissions with joins
-      const { data: teamPermissionsData, error: teamPermissionsError } = await supabase
-        .from('agent_permissions')
-        .select(`
-          *,
-          permission:admin_permissions(*),
-          agent:agents(*)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (teamPermissionsError) {
-        console.log('Team permissions error (table may not exist yet):', teamPermissionsError);
-        setTeamPermissions([]);
-      } else {
-        setTeamPermissions((teamPermissionsData as any) || []);
-      }
+      // Note: Team permissions feature requires agent_permissions table to be created
+      // For now, we'll keep team permissions as an empty array
+      setTeamPermissions([]);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -328,73 +317,23 @@ const AdminPermissions = () => {
   const handleGrantTeamPermission = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    try {
-      // Check if agent_permissions table exists, if not show a helpful message
-      const { error } = await supabase
-        .from('agent_permissions')
-        .insert([{
-          agent_id: teamPermissionForm.agent_id,
-          permission_id: teamPermissionForm.permission_id,
-          granted_by: null
-        }]);
-
-      if (error) {
-        if (error.message.includes('does not exist')) {
-          toast({
-            title: "Setup Required",
-            description: "Team permissions feature needs to be set up. Please contact your system administrator.",
-            variant: "destructive"
-          });
-          return;
-        }
-        throw error;
-      }
-      
-      toast({
-        title: "Success",
-        description: "Permission granted to team member successfully"
-      });
-      
-      setIsTeamPermissionDialogOpen(false);
-      setTeamPermissionForm({
-        agent_id: '',
-        permission_id: ''
-      });
-      fetchData();
-    } catch (error) {
-      console.error('Error granting team permission:', error);
-      toast({
-        title: "Error",
-        description: "Failed to grant permission to team member",
-        variant: "destructive"
-      });
-    }
+    // Since agent_permissions table doesn't exist yet, show a setup message
+    toast({
+      title: "Setup Required",
+      description: "Team permissions feature needs to be set up in the database. Please contact your system administrator.",
+      variant: "destructive"
+    });
   };
 
   const handleRevokeTeamPermission = async (id: string) => {
     if (!confirm('Are you sure you want to revoke this team permission?')) return;
     
-    try {
-      const { error } = await supabase
-        .from('agent_permissions')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Team permission revoked successfully"
-      });
-      fetchData();
-    } catch (error) {
-      console.error('Error revoking team permission:', error);
-      toast({
-        title: "Error",
-        description: "Failed to revoke team permission",
-        variant: "destructive"
-      });
-    }
+    // Since agent_permissions table doesn't exist yet, show a setup message
+    toast({
+      title: "Setup Required",
+      description: "Team permissions feature needs to be set up in the database. Please contact your system administrator.",
+      variant: "destructive"
+    });
   };
 
   const groupedPermissions = permissions.reduce((acc, permission) => {
@@ -736,6 +675,16 @@ const AdminPermissions = () => {
                     <form onSubmit={handleGrantTeamPermission}>
                       <div className="space-y-4">
                         <div>
+                          <Label htmlFor="search_member">Search by Mobile Number</Label>
+                          <Input
+                            id="search_member"
+                            value={teamMemberSearch}
+                            onChange={(e) => setTeamMemberSearch(e.target.value)}
+                            placeholder="Enter mobile number to search"
+                            className="mb-2"
+                          />
+                        </div>
+                        <div>
                           <Label htmlFor="team_member">Team Member</Label>
                           <Select 
                             value={teamPermissionForm.agent_id} 
@@ -745,9 +694,14 @@ const AdminPermissions = () => {
                               <SelectValue placeholder="Select team member" />
                             </SelectTrigger>
                             <SelectContent>
-                              {teamMembers.map((member) => (
+                              {teamMembers
+                                .filter(member => {
+                                  if (!teamMemberSearch) return true;
+                                  return member.phone && member.phone.includes(teamMemberSearch);
+                                })
+                                .map((member) => (
                                 <SelectItem key={member.id} value={member.id}>
-                                  {member.name} ({member.role})
+                                  {member.name} ({member.role}) {member.phone && `- ${member.phone}`}
                                 </SelectItem>
                               ))}
                             </SelectContent>
