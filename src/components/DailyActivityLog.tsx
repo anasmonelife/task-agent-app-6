@@ -8,7 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, Clock, User, Phone, Trophy, Star } from "lucide-react";
-import { format, parseISO, isBefore, startOfToday, startOfMonth, endOfMonth } from "date-fns";
+import { format, parseISO, startOfToday, startOfMonth, endOfMonth } from "date-fns";
 import { typedSupabase, TABLES } from "@/lib/supabase-utils";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -193,7 +193,7 @@ export const DailyActivityLog = () => {
     const hasActivity = activities.some(activity => activity.activity_date === dateStr);
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const isPast = isBefore(date, yesterday);
+    const isPast = date < yesterday;
     if (hasActivity) {
       return 'bg-green-100 text-green-800 hover:bg-green-200';
     } else if (isPast) {
@@ -205,7 +205,7 @@ export const DailyActivityLog = () => {
     if (!date) return;
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const isPast = isBefore(date, yesterday);
+    const isPast = date < yesterday;
     const dateStr = format(date, 'yyyy-MM-dd');
     const existingActivity = activities.find(activity => activity.activity_date === dateStr);
     setSelectedDate(date);
@@ -306,7 +306,7 @@ export const DailyActivityLog = () => {
   };
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
-  const isPastDate = selectedDate && isBefore(selectedDate, yesterday);
+  const isPastDate = selectedDate && selectedDate < yesterday;
   const isReadOnly = isPastDate;
 
   // Points Popup Component
@@ -425,7 +425,7 @@ export const DailyActivityLog = () => {
                       const dateStr = format(date, 'yyyy-MM-dd');
                       const yesterday = new Date();
                       yesterday.setDate(yesterday.getDate() - 1);
-                      const isPast = isBefore(date, yesterday);
+                      const isPast = date < yesterday;
                       return isPast && !activities.some(activity => activity.activity_date === dateStr);
                     }
                   }} 
