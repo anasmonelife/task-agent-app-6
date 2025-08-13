@@ -85,7 +85,7 @@ const AdminPermissions = () => {
   });
   const [teamPermissionForm, setTeamPermissionForm] = useState({
     agent_id: '',
-    permission_id: ''
+    permission_ids: [] as string[]
   });
   const [teamMemberSearch, setTeamMemberSearch] = useState('');
   const { toast } = useToast();
@@ -341,6 +341,15 @@ const AdminPermissions = () => {
 
   const handleGrantTeamPermission = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (teamPermissionForm.permission_ids.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select at least one permission",
+        variant: "destructive"
+      });
+      return;
+    }
     
     // Since agent_permissions table doesn't exist yet, show a setup message
     toast({
@@ -683,7 +692,16 @@ const AdminPermissions = () => {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium">Team Permission Assignments</h3>
-                <Dialog open={isTeamPermissionDialogOpen} onOpenChange={setIsTeamPermissionDialogOpen}>
+                 <Dialog open={isTeamPermissionDialogOpen} onOpenChange={(open) => {
+                   setIsTeamPermissionDialogOpen(open);
+                   if (!open) {
+                     setTeamPermissionForm({
+                       agent_id: '',
+                       permission_ids: []
+                     });
+                     setTeamMemberSearch('');
+                   }
+                 }}>
                   <DialogTrigger asChild>
                     <Button>
                       <Plus className="h-4 w-4 mr-2" />
@@ -752,24 +770,58 @@ const AdminPermissions = () => {
                              </SelectContent>
                            </Select>
                          </div>
-                        <div>
-                          <Label htmlFor="permission">Permission</Label>
-                          <Select 
-                            value={teamPermissionForm.permission_id} 
-                            onValueChange={(value) => setTeamPermissionForm({ ...teamPermissionForm, permission_id: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select permission" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {permissions.filter(p => p.is_active).map((permission) => (
-                                <SelectItem key={permission.id} value={permission.id}>
-                                  {permission.permission_name} - {permission.description}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                         <div>
+                           <Label>
+                             Permissions {teamPermissionForm.permission_ids.length > 0 && 
+                               <span className="text-muted-foreground">({teamPermissionForm.permission_ids.length} selected)</span>}
+                           </Label>
+                           <div className="max-h-64 overflow-y-auto border rounded-md p-4 space-y-4">
+                             {Object.entries(groupedPermissions).map(([category, categoryPermissions]) => (
+                               <div key={category}>
+                                 <h4 className="font-medium text-sm text-muted-foreground mb-2">{category}</h4>
+                                 <div className="space-y-2">
+                                   {categoryPermissions
+                                     .filter(p => p.is_active)
+                                     .map((permission) => (
+                                     <div key={permission.id} className="flex items-start space-x-2">
+                                       <input
+                                         type="checkbox"
+                                         id={`team-permission-${permission.id}`}
+                                         checked={teamPermissionForm.permission_ids.includes(permission.id)}
+                                         onChange={(e) => {
+                                           const isChecked = e.target.checked;
+                                           const currentIds = teamPermissionForm.permission_ids;
+                                           
+                                           if (isChecked) {
+                                             setTeamPermissionForm({
+                                               ...teamPermissionForm,
+                                               permission_ids: [...currentIds, permission.id]
+                                             });
+                                           } else {
+                                             setTeamPermissionForm({
+                                               ...teamPermissionForm,
+                                               permission_ids: currentIds.filter(id => id !== permission.id)
+                                             });
+                                           }
+                                         }}
+                                         className="mt-1"
+                                       />
+                                       <label 
+                                         htmlFor={`team-permission-${permission.id}`}
+                                         className="text-sm cursor-pointer flex-1"
+                                       >
+                                         <div className="font-medium">{permission.permission_name}</div>
+                                         {permission.description && (
+                                           <div className="text-muted-foreground text-xs">{permission.description}</div>
+                                         )}
+                                       </label>
+                                     </div>
+                                   ))}
+                                 </div>
+                               </div>
+                             ))}
+                           </div>
+                         </div>
                       </div>
                       <DialogFooter className="mt-6">
                         <Button type="submit">Grant Permission</Button>
