@@ -699,39 +699,59 @@ const AdminPermissions = () => {
                     </DialogHeader>
                     <form onSubmit={handleGrantTeamPermission}>
                       <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="search_member">Search by Mobile Number</Label>
-                          <Input
-                            id="search_member"
-                            value={teamMemberSearch}
-                            onChange={(e) => setTeamMemberSearch(e.target.value)}
-                            placeholder="Enter mobile number to search"
-                            className="mb-2"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="team_member">Team Member</Label>
-                          <Select 
-                            value={teamPermissionForm.agent_id} 
-                            onValueChange={(value) => setTeamPermissionForm({ ...teamPermissionForm, agent_id: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select team member" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {teamMembers
-                                .filter(member => {
-                                  if (!teamMemberSearch) return true;
-                                  return member.phone && member.phone.includes(teamMemberSearch);
-                                })
-                                .map((member) => (
-                                <SelectItem key={member.id} value={member.id}>
-                                  {member.name} ({member.role}) {member.phone && `- ${member.phone}`}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                         <div>
+                           <Label htmlFor="search_member">Search Team Member by Mobile Number</Label>
+                           <Input
+                             id="search_member"
+                             value={teamMemberSearch}
+                             onChange={(e) => setTeamMemberSearch(e.target.value)}
+                             placeholder="Enter mobile number (e.g. 9876543210)"
+                             className="mb-2"
+                           />
+                           {teamMemberSearch && (
+                             <p className="text-sm text-muted-foreground">
+                               Found {teamMembers.filter(member => 
+                                 member.phone && member.phone.includes(teamMemberSearch)
+                               ).length} team member(s) matching "{teamMemberSearch}"
+                             </p>
+                           )}
+                         </div>
+                         <div>
+                           <Label htmlFor="team_member">Team Member</Label>
+                           <Select 
+                             value={teamPermissionForm.agent_id} 
+                             onValueChange={(value) => setTeamPermissionForm({ ...teamPermissionForm, agent_id: value })}
+                           >
+                             <SelectTrigger>
+                               <SelectValue placeholder={
+                                 teamMemberSearch 
+                                   ? "Select from filtered team members" 
+                                   : "Select team member (or search by mobile above)"
+                               } />
+                             </SelectTrigger>
+                             <SelectContent>
+                               {teamMembers
+                                 .filter(member => {
+                                   if (!teamMemberSearch) return true;
+                                   return member.phone && member.phone.includes(teamMemberSearch);
+                                 })
+                                 .map((member) => (
+                                 <SelectItem key={member.id} value={member.id}>
+                                   {member.name} ({member.role}){member.phone && ` - ${member.phone}`}
+                                 </SelectItem>
+                               ))}
+                               {teamMembers
+                                 .filter(member => {
+                                   if (!teamMemberSearch) return true;
+                                   return member.phone && member.phone.includes(teamMemberSearch);
+                                 }).length === 0 && teamMemberSearch && (
+                                 <SelectItem value="" disabled>
+                                   No team members found with mobile: {teamMemberSearch}
+                                 </SelectItem>
+                               )}
+                             </SelectContent>
+                           </Select>
+                         </div>
                         <div>
                           <Label htmlFor="permission">Permission</Label>
                           <Select 
