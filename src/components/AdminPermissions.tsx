@@ -141,14 +141,39 @@ const AdminPermissions = () => {
       if (userPermissionsError) throw userPermissionsError;
       setUserPermissions((userPermissionsData as any) || []);
 
-      // Fetch team members (agents)
+      // Fetch team members (only agents that are part of management teams)
       const { data: teamMembersData, error: teamMembersError } = await supabase
-        .from('agents')
-        .select('*')
-        .order('name', { ascending: true });
+        .from('management_team_members')
+        .select(`
+          agent_id,
+          agents!inner (
+            id,
+            name,
+            phone,
+            email,
+            role,
+            panchayath_id,
+            created_at,
+            updated_at
+          )
+        `)
+        .order('agents(name)', { ascending: true });
 
       if (teamMembersError) throw teamMembersError;
-      setTeamMembers(teamMembersData || []);
+      
+      // Transform the data to match TeamMember interface
+      const transformedTeamMembers = teamMembersData?.map(item => ({
+        id: item.agents.id,
+        name: item.agents.name,
+        role: item.agents.role,
+        email: item.agents.email || '',
+        phone: item.agents.phone || '',
+        panchayath_id: item.agents.panchayath_id,
+        created_at: item.agents.created_at,
+        updated_at: item.agents.updated_at
+      })) || [];
+      
+      setTeamMembers(transformedTeamMembers);
 
       // Note: Team permissions feature requires agent_permissions table to be created
       // For now, we'll keep team permissions as an empty array
