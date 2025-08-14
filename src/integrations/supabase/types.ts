@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -367,6 +367,8 @@ export type Database = {
       }
       panchayath_notes: {
         Row: {
+          agent_id: string | null
+          category: string
           created_at: string
           created_by: string
           id: string
@@ -375,6 +377,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agent_id?: string | null
+          category?: string
           created_at?: string
           created_by: string
           id?: string
@@ -383,6 +387,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agent_id?: string | null
+          category?: string
           created_at?: string
           created_by?: string
           id?: string
@@ -391,6 +397,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "panchayath_notes_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "panchayath_notes_panchayath_id_fkey"
             columns: ["panchayath_id"]
@@ -691,9 +704,9 @@ export type Database = {
       get_team_by_id: {
         Args: { team_id: string }
         Returns: {
+          description: string
           id: string
           name: string
-          description: string
           team_password: string
         }[]
       }
