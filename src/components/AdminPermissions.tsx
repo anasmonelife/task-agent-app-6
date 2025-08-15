@@ -51,14 +51,25 @@ interface TeamMember {
   updated_at: string;
 }
 
+interface ManagementTeam {
+  id: string;
+  name: string;
+  description: string;
+  is_active: boolean;
+}
+
 interface TeamPermission {
   id: string;
-  agent_id: string;
+  team_id: string;
   permission_id: string;
   granted_by: string | null;
   created_at: string;
   permission?: Permission;
-  agent?: TeamMember;
+  team?: {
+    id: string;
+    name: string;
+    description: string;
+  };
 }
 
 const AdminPermissions = () => {
@@ -66,6 +77,7 @@ const AdminPermissions = () => {
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [userPermissions, setUserPermissions] = useState<UserPermission[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [managementTeams, setManagementTeams] = useState<ManagementTeam[]>([]);
   const [teamPermissions, setTeamPermissions] = useState<TeamPermission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState<'permissions' | 'user-permissions' | 'team-permissions'>('permissions');
@@ -84,7 +96,7 @@ const AdminPermissions = () => {
     permission_id: ''
   });
   const [teamPermissionForm, setTeamPermissionForm] = useState({
-    agent_id: '',
+    team_id: '',
     permission_ids: [] as string[]
   });
   const [teamMemberSearch, setTeamMemberSearch] = useState('');
@@ -175,9 +187,28 @@ const AdminPermissions = () => {
       
       setTeamMembers(transformedTeamMembers);
 
-      // Note: Team permissions feature requires agent_permissions table to be created
-      // For now, we'll keep team permissions as an empty array
-      setTeamPermissions([]);
+      // Fetch management teams
+      const { data: teamsData, error: teamsError } = await supabase
+        .from('management_teams')
+        .select('*')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+
+      if (teamsError) throw teamsError;
+      setManagementTeams(teamsData || []);
+
+      // Fetch team permissions with joins
+      const { data: teamPermissionsData, error: teamPermissionsError } = await supabase
+        .from('team_permissions')
+        .select(`
+          *,
+          permission:admin_permissions(*),
+          team:management_teams(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (teamPermissionsError) throw teamPermissionsError;
+      setTeamPermissions((teamPermissionsData as any) || []);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -351,23 +382,65 @@ const AdminPermissions = () => {
       return;
     }
     
-    // Since agent_permissions table doesn't exist yet, show a setup message
-    toast({
-      title: "Setup Required",
-      description: "Team permissions feature needs to be set up in the database. Please contact your system administrator.",
-      variant: "destructive"
-    });
+    try {
+      // Create team permission entries for each selected permission
+      const permissions = teamPermissionForm.permission_ids.map(permissionId => ({
+        team_id: teamPermissionForm.team_id,
+        permission_id: permissionId,
+        granted_by: null // You can set this to the current admin user ID
+      }));
+
+      const { error } = await supabase
+        .from('team_permissions')
+        .insert(permissions);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Team permissions granted successfully"
+      });
+      
+      setIsTeamPermissionDialogOpen(false);
+      setTeamPermissionForm({
+        team_id: '',
+        permission_ids: []
+      });
+      fetchData();
+    } catch (error) {
+      console.error('Error granting team permission:', error);
+      toast({
+        title: "Error",
+        description: "Failed to grant team permission",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleRevokeTeamPermission = async (id: string) => {
     if (!confirm('Are you sure you want to revoke this team permission?')) return;
     
-    // Since agent_permissions table doesn't exist yet, show a setup message
-    toast({
-      title: "Setup Required",
-      description: "Team permissions feature needs to be set up in the database. Please contact your system administrator.",
-      variant: "destructive"
-    });
+    try {
+      const { error } = await supabase
+        .from('team_permissions')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast({
+        title: "Success",
+        description: "Team permission revoked successfully"
+      });
+      fetchData();
+    } catch (error) {
+      console.error('Error revoking team permission:', error);
+      toast({
+        title: "Error",
+        description: "Failed to revoke team permission",
+        variant: "destructive"
+      });
+    }
   };
 
   const groupedPermissions = permissions.reduce((acc, permission) => {
@@ -694,13 +767,13 @@ const AdminPermissions = () => {
                 <h3 className="text-lg font-medium">Team Permission Assignments</h3>
                  <Dialog open={isTeamPermissionDialogOpen} onOpenChange={(open) => {
                    setIsTeamPermissionDialogOpen(open);
-                   if (!open) {
-                     setTeamPermissionForm({
-                       agent_id: '',
-                       permission_ids: []
-                     });
-                     setTeamMemberSearch('');
-                   }
+                     if (!open) {
+                      setTeamPermissionForm({
+                        team_id: '',
+                        permission_ids: []
+                      });
+                      setTeamMemberSearch('');
+                    }
                  }}>
                   <DialogTrigger asChild>
                     <Button>
@@ -709,67 +782,32 @@ const AdminPermissions = () => {
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Grant Permission to Team Member</DialogTitle>
-                      <DialogDescription>
-                        Assign a specific permission to a team member
-                      </DialogDescription>
-                    </DialogHeader>
+                     <DialogHeader>
+                       <DialogTitle>Grant Permission to Team</DialogTitle>
+                       <DialogDescription>
+                         Assign specific permissions to a management team
+                       </DialogDescription>
+                     </DialogHeader>
                     <form onSubmit={handleGrantTeamPermission}>
-                      <div className="space-y-4">
-                         <div>
-                           <Label htmlFor="search_member">Search Team Member by Mobile Number</Label>
-                           <Input
-                             id="search_member"
-                             value={teamMemberSearch}
-                             onChange={(e) => setTeamMemberSearch(e.target.value)}
-                             placeholder="Enter mobile number (e.g. 9876543210)"
-                             className="mb-2"
-                           />
-                           {teamMemberSearch && (
-                             <p className="text-sm text-muted-foreground">
-                               Found {teamMembers.filter(member => 
-                                 member.phone && member.phone.includes(teamMemberSearch)
-                               ).length} team member(s) matching "{teamMemberSearch}"
-                             </p>
-                           )}
-                         </div>
-                         <div>
-                           <Label htmlFor="team_member">Team Member</Label>
-                           <Select 
-                             value={teamPermissionForm.agent_id} 
-                             onValueChange={(value) => setTeamPermissionForm({ ...teamPermissionForm, agent_id: value })}
-                           >
-                             <SelectTrigger>
-                               <SelectValue placeholder={
-                                 teamMemberSearch 
-                                   ? "Select from filtered team members" 
-                                   : "Select team member (or search by mobile above)"
-                               } />
-                             </SelectTrigger>
-                             <SelectContent>
-                               {teamMembers
-                                 .filter(member => {
-                                   if (!teamMemberSearch) return true;
-                                   return member.phone && member.phone.includes(teamMemberSearch);
-                                 })
-                                 .map((member) => (
-                                 <SelectItem key={member.id} value={member.id}>
-                                   {member.name} ({member.role}){member.phone && ` - ${member.phone}`}
-                                 </SelectItem>
-                               ))}
-                               {teamMembers
-                                 .filter(member => {
-                                   if (!teamMemberSearch) return true;
-                                   return member.phone && member.phone.includes(teamMemberSearch);
-                                 }).length === 0 && teamMemberSearch && (
-                                 <SelectItem value="" disabled>
-                                   No team members found with mobile: {teamMemberSearch}
-                                 </SelectItem>
-                               )}
-                             </SelectContent>
-                           </Select>
-                         </div>
+                       <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="management_team">Management Team</Label>
+                            <Select 
+                              value={teamPermissionForm.team_id} 
+                              onValueChange={(value) => setTeamPermissionForm({ ...teamPermissionForm, team_id: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select management team" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {managementTeams.map((team) => (
+                                  <SelectItem key={team.id} value={team.id}>
+                                    {team.name} {team.description && `- ${team.description}`}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                          <div>
                            <Label>
                              Permissions {teamPermissionForm.permission_ids.length > 0 && 
@@ -835,24 +873,24 @@ const AdminPermissions = () => {
                 <CardContent className="pt-6">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Team Member</TableHead>
-                        <TableHead>Role</TableHead>
+                       <TableRow>
+                         <TableHead>Team</TableHead>
+                         <TableHead>Type</TableHead>
                         <TableHead>Permission</TableHead>
                         <TableHead>Category</TableHead>
                         <TableHead>Granted</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
-                      {teamPermissions.map((teamPermission) => (
-                        <TableRow key={teamPermission.id}>
-                          <TableCell>{teamPermission.agent?.name}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {teamPermission.agent?.role}
-                            </Badge>
-                          </TableCell>
+                     <TableBody>
+                       {teamPermissions.map((teamPermission) => (
+                         <TableRow key={teamPermission.id}>
+                           <TableCell>{teamPermission.team?.name}</TableCell>
+                           <TableCell>
+                             <Badge variant="outline">
+                               Team
+                             </Badge>
+                           </TableCell>
                           <TableCell className="font-mono text-sm">
                             {teamPermission.permission?.permission_name}
                           </TableCell>
