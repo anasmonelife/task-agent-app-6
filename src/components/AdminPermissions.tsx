@@ -108,6 +108,8 @@ const AdminPermissions = () => {
     'Task Management',
     'Points Management',
     'Panchayath Management',
+    'Hierarchy Management',
+    'Notes Management',
     'Reports',
     'Notifications',
     'System Settings',

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut, Shield, Home, 
   Users, UserCheck, Building2, CheckSquare, Award, 
-  FileText, Bell, Settings, BarChart3 } from "lucide-react";
+  FileText, Bell, Settings, BarChart3, GitBranch, MessageSquare } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AdminAuthProvider, useAdminAuth } from "@/components/AdminAuthProvider";
 import AdminLogin from "@/components/AdminLogin";
@@ -18,6 +18,8 @@ import AdminReports from "@/components/AdminReports";
 import AdminNotifications from "@/components/AdminNotifications";
 import AdminSettings from "@/components/AdminSettings";
 import AgentPointsPage from "@/pages/AgentPointsPage";
+import { HierarchyTable } from "@/components/HierarchyTable";
+import { PanchayathNotes } from "@/components/PanchayathNotes";
 
 const AdminPanelContent = () => {
   const { adminUser, logout } = useAdminAuth();
@@ -108,6 +110,24 @@ const AdminPanelContent = () => {
       color: 'text-red-600',
       bgColor: 'bg-red-50',
       component: <AdminNotifications />
+    },
+    {
+      id: 'hierarchy',
+      title: 'Hierarchy Details',
+      description: 'Manage agent hierarchy structure',
+      icon: GitBranch,
+      color: 'text-cyan-600',
+      bgColor: 'bg-cyan-50',
+      component: <div className="p-4"><HierarchyTable agents={[]} panchayathName="All Panchayaths" /></div>
+    },
+    {
+      id: 'panchayath-notes',
+      title: 'Panchayath Notes',
+      description: 'Manage panchayath notes and updates',
+      icon: MessageSquare,
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-50',
+      component: <div className="p-4"><PanchayathNotes /></div>
     }
   ];
 

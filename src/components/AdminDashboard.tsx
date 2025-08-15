@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from '@/integrations/supabase/client';
-import { Users, Building2, CheckSquare, UserCheck, TrendingUp } from "lucide-react";
+import { Users, Building2, CheckSquare, UserCheck, TrendingUp, GitBranch, FileText } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
+import { HierarchyTable } from "@/components/HierarchyTable";
+import { PanchayathNotes } from "@/components/PanchayathNotes";
 
 interface DashboardStats {
   totalUsers: number;
@@ -11,6 +13,7 @@ interface DashboardStats {
   totalTasks: number;
   pendingApprovals: number;
   totalPanchayaths: number;
+  totalNotes: number;
 }
 
 export const AdminDashboard = () => {
@@ -20,6 +23,7 @@ export const AdminDashboard = () => {
     totalTasks: 0,
     pendingApprovals: 0,
     totalPanchayaths: 0,
+    totalNotes: 0,
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -72,12 +76,13 @@ export const AdminDashboard = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      const [usersResult, teamsResult, tasksResult, approvalsResult, panchayathsResult] = await Promise.all([
+      const [usersResult, teamsResult, tasksResult, approvalsResult, panchayathsResult, notesResult] = await Promise.all([
         supabase.from('agents').select('id', { count: 'exact' }),
         supabase.from('management_teams').select('id', { count: 'exact' }),
         supabase.from('tasks').select('id', { count: 'exact' }),
         supabase.from('user_registration_requests').select('id', { count: 'exact' }).eq('status', 'pending'),
-        supabase.from('panchayaths').select('id', { count: 'exact' })
+        supabase.from('panchayaths').select('id', { count: 'exact' }),
+        supabase.from('panchayath_notes').select('id', { count: 'exact' })
       ]);
 
       setStats({
@@ -86,6 +91,7 @@ export const AdminDashboard = () => {
         totalTasks: tasksResult.count || 0,
         pendingApprovals: approvalsResult.count || 0,
         totalPanchayaths: panchayathsResult.count || 0,
+        totalNotes: notesResult.count || 0,
       });
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -140,6 +146,26 @@ export const AdminDashboard = () => {
       color: "text-indigo-600",
       bgColor: "bg-indigo-50",
     },
+    {
+      title: "Hierarchy Details",
+      value: "View",
+      icon: GitBranch,
+      description: "Agent hierarchy structure",
+      color: "text-cyan-600",
+      bgColor: "bg-cyan-50",
+      isAction: true,
+      actionComponent: "hierarchy"
+    },
+    {
+      title: "Panchayath Notes",
+      value: stats.totalNotes,
+      icon: FileText,
+      description: "Total notes recorded",
+      color: "text-amber-600",
+      bgColor: "bg-amber-50",
+      isAction: true,
+      actionComponent: "notes"
+    },
   ];
 
   if (loading) {
@@ -165,7 +191,7 @@ export const AdminDashboard = () => {
         <p className="text-gray-600 mt-2">Overview of system statistics and real-time updates</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {statCards.map((card, index) => (
           <Card key={index} className="hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -179,7 +205,7 @@ export const AdminDashboard = () => {
               <p className="text-xs text-muted-foreground mt-1">
                 {card.description}
               </p>
-              {card.title === "Pending Approvals" && card.value > 0 && (
+              {card.title === "Pending Approvals" && typeof card.value === 'number' && card.value > 0 && (
                 <Badge variant="destructive" className="mt-2">
                   Needs Attention
                 </Badge>
@@ -230,6 +256,35 @@ export const AdminDashboard = () => {
                 • Update system settings
               </div>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Detailed Views Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <GitBranch className="h-5 w-5" />
+              Hierarchy Management
+            </CardTitle>
+            <CardDescription>View and manage agent hierarchy structure</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HierarchyTable agents={[]} panchayathName="All Panchayaths" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Panchayath Notes Management
+            </CardTitle>
+            <CardDescription>Manage notes and updates for panchayaths</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <PanchayathNotes />
           </CardContent>
         </Card>
       </div>
