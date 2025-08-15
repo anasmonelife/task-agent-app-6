@@ -7,6 +7,9 @@ interface AdminUser {
   username: string;
   role: string;
   is_active: boolean;
+  team_id?: string;
+  team_name?: string;
+  permissions?: string[];
 }
 
 interface AdminAuthContextType {

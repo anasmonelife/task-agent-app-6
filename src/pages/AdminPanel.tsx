@@ -7,6 +7,7 @@ import { LogOut, Shield, Home,
 import { Link } from "react-router-dom";
 import { AdminAuthProvider, useAdminAuth } from "@/components/AdminAuthProvider";
 import AdminLogin from "@/components/AdminLogin";
+import RestrictedAdminPanel from "@/components/RestrictedAdminPanel";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import UserManagement from "@/components/UserManagement";
 import MemberApprovals from "@/components/MemberApprovals";
@@ -28,6 +29,11 @@ const AdminPanelContent = () => {
 
   if (!adminUser) {
     return <AdminLogin />;
+  }
+
+  // If user is a team member admin, show restricted panel
+  if (adminUser.role === 'team_member_admin') {
+    return <RestrictedAdminPanel />;
   }
 
   const adminCards = [

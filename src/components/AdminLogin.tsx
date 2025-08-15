@@ -53,10 +53,21 @@ const AdminLogin = () => {
     setIsLoadingMobile(true);
     
     try {
-      // Check if mobile number belongs to a team member
+      // Check if mobile number belongs to a team member and get their team associations
       const { data: agentData, error: agentError } = await supabase
         .from('agents')
-        .select('id, name, phone')
+        .select(`
+          id, 
+          name, 
+          phone,
+          management_team_members(
+            management_teams(
+              id,
+              name,
+              description
+            )
+          )
+        `)
         .eq('phone', mobileNumber)
         .single();
 
@@ -70,20 +81,53 @@ const AdminLogin = () => {
         return;
       }
 
-      // Create a temporary admin session for team member
+      // Get team IDs for this agent
+      const teamIds = agentData.management_team_members?.map((member: any) => member.management_teams.id) || [];
+      
+      if (teamIds.length === 0) {
+        toast({
+          title: "Error",
+          description: "No team associations found for this mobile number",
+          variant: "destructive",
+        });
+        setIsLoadingMobile(false);
+        return;
+      }
+
+      // Fetch team permissions for all associated teams
+      const { data: teamPermissions, error: permissionsError } = await supabase
+        .from('team_permissions')
+        .select('permission_id, team_id')
+        .in('team_id', teamIds);
+
+      if (permissionsError) {
+        console.error('Error fetching team permissions:', permissionsError);
+      }
+
+      // Aggregate all unique permissions across teams
+      const allPermissions = [...new Set(teamPermissions?.map(p => p.permission_id) || [])];
+
+      // Get team information
+      const teamInfo = agentData.management_team_members?.[0]?.management_teams;
+
+      // Create a team member admin session with permissions
       const teamMemberAdmin = {
         id: `team_${agentData.id}`,
         username: agentData.name,
         role: 'team_member_admin',
         phone: agentData.phone,
-        active: true
+        active: true,
+        team_id: teamInfo?.id,
+        team_name: teamInfo?.name,
+        permissions: allPermissions,
+        is_active: true
       };
 
       localStorage.setItem('adminUser', JSON.stringify(teamMemberAdmin));
       
       toast({
         title: "Success",
-        description: `Welcome to admin panel, ${agentData.name}!`,
+        description: `Welcome to admin panel, ${agentData.name}! Team: ${teamInfo?.name}`,
       });
 
       // Redirect to admin panel
