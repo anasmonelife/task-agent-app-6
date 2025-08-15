@@ -423,7 +423,7 @@ export default function TeamPage() {
                 <Users className="h-5 w-5 text-gray-600" />
                 <span className="font-medium text-gray-900">{teamMemberships[0]?.management_teams?.name}</span>
               </div>
-              <Link to="/admin" className="text-blue-600 hover:text-blue-800">
+              <Link to="/team-all-view" className="text-blue-600 hover:text-blue-800">
                 <Button variant="outline" size="sm">
                   <Shield className="h-4 w-4 mr-2" />
                   All View
