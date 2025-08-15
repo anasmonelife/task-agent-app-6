@@ -20,6 +20,7 @@ import AdminSettings from "@/components/AdminSettings";
 import AgentPointsPage from "@/pages/AgentPointsPage";
 import { AdminHierarchyDetails } from "@/components/AdminHierarchyDetails";
 import { PanchayathNotes } from "@/components/PanchayathNotes";
+import AdminTeamPermissions from "@/components/AdminTeamPermissions";
 
 const AdminPanelContent = () => {
   const { adminUser, logout } = useAdminAuth();
@@ -65,6 +66,15 @@ const AdminPanelContent = () => {
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
       component: <TeamManagement />
+    },
+    {
+      id: 'team-permissions',
+      title: 'Team Permissions',
+      description: 'Manage team access permissions',
+      icon: Shield,
+      color: 'text-violet-600',
+      bgColor: 'bg-violet-50',
+      component: <AdminTeamPermissions />
     },
     {
       id: 'tasks',

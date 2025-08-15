@@ -20,6 +20,7 @@ import { AuthProvider } from './components/AuthProvider';
 import { AdminAuthProvider } from './components/AdminAuthProvider';
 import AdminPanel from './pages/AdminPanel';
 import TeamAllView from './pages/TeamAllView';
+import TeamAdminDashboard from './components/TeamAdminDashboard';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +49,7 @@ function App() {
               <Route path="/member-dashboard" element={<MemberDashboard />} />
               <Route path="/team" element={<TeamPage />} />
               <Route path="/team-all-view" element={<TeamAllView />} />
+              <Route path="/team-admin/:teamId" element={<TeamAdminDashboard />} />
               <Route path="/team-dashboard" element={<TeamDashboard />} />
               <Route path="/team-task-management" element={<TeamTaskManagement />} />
               <Route path="/team-reports" element={<TeamReports />} />

@@ -187,6 +187,11 @@ const TeamManagement = () => {
           title: "Success",
           description: "Team created successfully",
         });
+
+        // Create default permissions for new team
+        if (!editingTeam) {
+          await createDefaultPermissions(formData.name);
+        }
       }
 
       resetForm();
@@ -223,6 +228,39 @@ const TeamManagement = () => {
         description: "Failed to delete team",
         variant: "destructive",
       });
+    }
+  };
+
+  const createDefaultPermissions = async (teamName: string) => {
+    try {
+      // Get the newly created team
+      const { data: teamData } = await supabase
+        .from('management_teams')
+        .select('id')
+        .eq('name', teamName)
+        .single();
+
+      if (teamData) {
+        // Create team_permissions table if it doesn't exist and add default permissions
+        const defaultPermissions = [
+          'team_management',
+          'task_management',
+          'reports_view'
+        ];
+
+        const permissionsToInsert = defaultPermissions.map(permission => ({
+          team_id: teamData.id,
+          permission_id: permission,
+          granted_by: 'system'
+        }));
+
+        await supabase
+          .from('team_permissions')
+          .insert(permissionsToInsert);
+      }
+    } catch (error) {
+      console.error('Error creating default permissions:', error);
+      // Don't throw error to prevent blocking team creation
     }
   };
 
