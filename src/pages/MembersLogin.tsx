@@ -10,7 +10,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { MobileAgentSearch } from "@/components/MobileAgentSearch";
-
 export default function MembersLogin() {
   const [loginData, setLoginData] = useState({
     mobileNumber: ''
@@ -21,25 +20,24 @@ export default function MembersLogin() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [loginStatus, setLoginStatus] = useState<'idle' | 'success' | 'pending' | 'rejected'>('idle');
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const navigate = useNavigate();
-
   const handleAgentSelect = (agentId: string) => {
-    setRegistrationData({ selectedAgentId: agentId });
+    setRegistrationData({
+      selectedAgentId: agentId
+    });
   };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoggingIn(true);
-    
     try {
       // Check if member exists and is approved using only mobile number
-      const { data, error } = await supabase
-        .from('user_registration_requests')
-        .select('*, panchayaths(name, district, state)')
-        .eq('mobile_number', loginData.mobileNumber)
-        .single();
-
+      const {
+        data,
+        error
+      } = await supabase.from('user_registration_requests').select('*, panchayaths(name, district, state)').eq('mobile_number', loginData.mobileNumber).single();
       if (error) {
         if (error.code === 'PGRST116') {
           toast({
@@ -52,7 +50,6 @@ export default function MembersLogin() {
         }
         return;
       }
-
       if (data.status === 'approved') {
         // Store member session
         localStorage.setItem('member_user', JSON.stringify({
@@ -63,7 +60,6 @@ export default function MembersLogin() {
           panchayath: data.panchayaths,
           role: 'member'
         }));
-        
         setLoginStatus('success');
         setTimeout(() => {
           navigate('/member-dashboard');
@@ -84,11 +80,9 @@ export default function MembersLogin() {
       setIsLoggingIn(false);
     }
   };
-
   const handleRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsRegistering(true);
-
     if (!registrationData.selectedAgentId) {
       toast({
         title: "Error",
@@ -98,27 +92,20 @@ export default function MembersLogin() {
       setIsRegistering(false);
       return;
     }
-
     try {
       // Get selected agent data from database
-      const { data: selectedAgent, error: agentError } = await supabase
-        .from('agents')
-        .select('*')
-        .eq('id', registrationData.selectedAgentId)
-        .single();
-
+      const {
+        data: selectedAgent,
+        error: agentError
+      } = await supabase.from('agents').select('*').eq('id', registrationData.selectedAgentId).single();
       if (agentError || !selectedAgent) {
         throw new Error('Selected agent not found');
       }
 
       // Check if already registered with this agent
-      const { data: existingData } = await supabase
-        .from('user_registration_requests')
-        .select('id')
-        .eq('username', selectedAgent.name)
-        .eq('mobile_number', selectedAgent.phone)
-        .single();
-
+      const {
+        data: existingData
+      } = await supabase.from('user_registration_requests').select('id').eq('username', selectedAgent.name).eq('mobile_number', selectedAgent.phone).single();
       if (existingData) {
         toast({
           title: "Error",
@@ -130,23 +117,22 @@ export default function MembersLogin() {
       }
 
       // Create member registration
-      const { error } = await supabase
-        .from('user_registration_requests')
-        .insert([{
-          username: selectedAgent.name,
-          mobile_number: selectedAgent.phone,
-          panchayath_id: selectedAgent.panchayath_id,
-          status: 'pending'
-        }]);
-
+      const {
+        error
+      } = await supabase.from('user_registration_requests').insert([{
+        username: selectedAgent.name,
+        mobile_number: selectedAgent.phone,
+        panchayath_id: selectedAgent.panchayath_id,
+        status: 'pending'
+      }]);
       if (error) throw error;
-
       toast({
         title: "Success",
-        description: "Registration submitted successfully. Please wait for admin approval.",
+        description: "Registration submitted successfully. Please wait for admin approval."
       });
-
-      setRegistrationData({ selectedAgentId: '' });
+      setRegistrationData({
+        selectedAgentId: ''
+      });
     } catch (error) {
       console.error('Registration error:', error);
       toast({
@@ -158,10 +144,8 @@ export default function MembersLogin() {
       setIsRegistering(false);
     }
   };
-
   if (loginStatus === 'success') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <Card className="w-full max-w-md mx-auto">
           <CardHeader className="text-center">
             <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
@@ -173,12 +157,9 @@ export default function MembersLogin() {
             </CardDescription>
           </CardHeader>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+  return <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md">
         <div className="mb-4">
           <Link to="/">
@@ -191,11 +172,11 @@ export default function MembersLogin() {
 
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login" className="flex items-center gap-2">
+            <TabsTrigger value="login" className="flex items-center gap-2 bg-blue-400 hover:bg-blue-300">
               <LogIn className="h-4 w-4" />
               Login
             </TabsTrigger>
-            <TabsTrigger value="register" className="flex items-center gap-2">
+            <TabsTrigger value="register" className="flex items-center gap-2 bg-emerald-400 hover:bg-emerald-300">
               <UserPlus className="h-4 w-4" />
               Register
             </TabsTrigger>
@@ -210,39 +191,29 @@ export default function MembersLogin() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {loginStatus === 'pending' && (
-                  <Alert className="mb-4">
+                {loginStatus === 'pending' && <Alert className="mb-4">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
                       Your registration is still pending admin approval.
                     </AlertDescription>
-                  </Alert>
-                )}
+                  </Alert>}
 
-                {loginStatus === 'rejected' && (
-                  <Alert variant="destructive" className="mb-4">
+                {loginStatus === 'rejected' && <Alert variant="destructive" className="mb-4">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
                       Your registration request was rejected. Please contact the administrator.
                     </AlertDescription>
-                  </Alert>
-                )}
+                  </Alert>}
 
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="login-mobile">Mobile Number</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        id="login-mobile"
-                        type="tel"
-                        placeholder="Enter your registered mobile number"
-                        value={loginData.mobileNumber}
-                        onChange={(e) => setLoginData(prev => ({ ...prev, mobileNumber: e.target.value }))}
-                        className="pl-10"
-                        maxLength={10}
-                        disabled={isLoggingIn}
-                      />
+                      <Input id="login-mobile" type="tel" placeholder="Enter your registered mobile number" value={loginData.mobileNumber} onChange={e => setLoginData(prev => ({
+                      ...prev,
+                      mobileNumber: e.target.value
+                    }))} className="pl-10" maxLength={10} disabled={isLoggingIn} />
                     </div>
                   </div>
 
@@ -264,10 +235,7 @@ export default function MembersLogin() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleRegistration} className="space-y-4">
-                  <MobileAgentSearch 
-                    onAgentSelect={handleAgentSelect}
-                    selectedAgentId={registrationData.selectedAgentId}
-                  />
+                  <MobileAgentSearch onAgentSelect={handleAgentSelect} selectedAgentId={registrationData.selectedAgentId} />
 
                   <Button type="submit" className="w-full" disabled={isRegistering}>
                     {isRegistering ? "Registering..." : "Register"}
@@ -278,6 +246,5 @@ export default function MembersLogin() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-  );
+    </div>;
 }
