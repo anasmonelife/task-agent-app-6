@@ -16,6 +16,13 @@ interface Team {
   is_active?: boolean;
 }
 
+interface Permission {
+  id: string;
+  permission_name: string;
+  description?: string;
+  created_at: string;
+}
+
 interface TeamPermission {
   id: string;
   team_id: string;
@@ -38,6 +45,7 @@ const AVAILABLE_PERMISSIONS = [
 const AdminTeamPermissions = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [permissions, setPermissions] = useState<TeamPermission[]>([]);
+  const [availablePermissions, setAvailablePermissions] = useState<Permission[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [loading, setLoading] = useState(true);
   
@@ -60,7 +68,19 @@ const AdminTeamPermissions = () => {
       if (teamsError) throw teamsError;
       setTeams(teamsData || []);
 
-      // Fetch permissions
+      // Fetch available permissions
+      const { data: availablePermissionsData, error: availablePermissionsError } = await supabase
+        .from('admin_permissions')
+        .select('*')
+        .order('permission_name');
+
+      if (availablePermissionsError) {
+        console.error('Error fetching available permissions:', availablePermissionsError);
+      } else {
+        setAvailablePermissions(availablePermissionsData || []);
+      }
+
+      // Fetch team permissions
       const { data: permissionsData, error: permissionsError } = await supabase
         .from('team_permissions')
         .select('*');
@@ -84,11 +104,11 @@ const AdminTeamPermissions = () => {
     }
   };
 
-  const hasPermission = (teamId: string, permissionKey: string) => {
-    return permissions.some(p => p.team_id === teamId && p.permission_id === permissionKey);
+  const hasPermission = (teamId: string, permissionId: string) => {
+    return permissions.some(p => p.team_id === teamId && p.permission_id === permissionId);
   };
 
-  const togglePermission = async (teamId: string, permissionKey: string, hasPermission: boolean) => {
+  const togglePermission = async (teamId: string, permissionId: string, hasPermission: boolean) => {
     try {
       const currentUser = localStorage.getItem('adminUser') || localStorage.getItem('admin_user');
       const adminData = currentUser ? JSON.parse(currentUser) : null;
@@ -100,7 +120,7 @@ const AdminTeamPermissions = () => {
           .from('team_permissions')
           .delete()
           .eq('team_id', teamId)
-          .eq('permission_id', permissionKey);
+          .eq('permission_id', permissionId);
 
         if (error) throw error;
       } else {
@@ -109,7 +129,7 @@ const AdminTeamPermissions = () => {
           .from('team_permissions')
           .insert({
             team_id: teamId,
-            permission_id: permissionKey,
+            permission_id: permissionId,
             granted_by: grantedBy
           });
 
@@ -209,28 +229,27 @@ const AdminTeamPermissions = () => {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {AVAILABLE_PERMISSIONS.map((permission) => {
-                          const IconComponent = permission.icon;
-                          const teamHasPermission = hasPermission(team.id, permission.key);
+                        {availablePermissions.map((permission) => {
+                          const teamHasPermission = hasPermission(team.id, permission.id);
                           
                           return (
                             <div
-                              key={permission.key}
+                              key={permission.id}
                               className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
                             >
                               <div className="flex items-center gap-3">
-                                <IconComponent className="h-5 w-5 text-muted-foreground" />
+                                <Shield className="h-5 w-5 text-muted-foreground" />
                                 <div>
-                                  <div className="font-medium">{permission.label}</div>
+                                  <div className="font-medium">{permission.permission_name}</div>
                                   <div className="text-sm text-muted-foreground">
-                                    {permission.description}
+                                    {permission.description || 'No description available'}
                                   </div>
                                 </div>
                               </div>
                               <Switch
                                 checked={teamHasPermission}
                                 onCheckedChange={() => 
-                                  togglePermission(team.id, permission.key, teamHasPermission)
+                                  togglePermission(team.id, permission.id, teamHasPermission)
                                 }
                               />
                             </div>
@@ -279,10 +298,10 @@ const AdminTeamPermissions = () => {
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {getTeamPermissions(team.id).map((permission) => {
-                        const permissionDef = AVAILABLE_PERMISSIONS.find(p => p.key === permission.permission_id);
+                        const permissionDef = availablePermissions.find(p => p.id === permission.permission_id);
                         return (
                           <Badge key={permission.id} variant="secondary" className="text-xs">
-                            {permissionDef?.label || permission.permission_id}
+                            {permissionDef?.permission_name || permission.permission_id}
                           </Badge>
                         );
                       })}
