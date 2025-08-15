@@ -117,8 +117,55 @@ const AdminPermissions = () => {
   ];
 
   useEffect(() => {
+    initializeSystemPermissions();
     fetchData();
   }, []);
+
+  const initializeSystemPermissions = async () => {
+    try {
+      const requiredPermissions = [
+        {
+          permission_name: 'hierarchy.view',
+          description: 'View organizational hierarchy and structure',
+          category: 'Hierarchy Management',
+          is_active: true
+        },
+        {
+          permission_name: 'panchayath.notes.manage',
+          description: 'Create, edit, and delete panchayath notes',
+          category: 'Notes Management',
+          is_active: true
+        }
+      ];
+
+      for (const permission of requiredPermissions) {
+        // Check if permission already exists
+        const { data: existing, error: checkError } = await supabase
+          .from('admin_permissions')
+          .select('id')
+          .eq('permission_name', permission.permission_name)
+          .single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.error('Error checking permission:', checkError);
+          continue;
+        }
+
+        // If permission doesn't exist, create it
+        if (!existing) {
+          const { error: insertError } = await supabase
+            .from('admin_permissions')
+            .insert([permission]);
+
+          if (insertError) {
+            console.error('Error inserting permission:', insertError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error initializing system permissions:', error);
+    }
+  };
 
   const fetchData = async () => {
     setIsLoading(true);
