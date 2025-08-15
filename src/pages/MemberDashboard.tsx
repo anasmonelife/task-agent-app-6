@@ -14,7 +14,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import PersonalTaskCard from "@/components/PersonalTaskCard";
 import TeamTaskCard from "@/components/TeamTaskCard";
-
 interface Task {
   id: string;
   title: string;
@@ -26,7 +25,6 @@ interface Task {
   team_id?: string;
   created_at: string;
 }
-
 interface TeamMember {
   id: string;
   team_id: string;
@@ -41,7 +39,6 @@ interface TeamMember {
     role?: string;
   };
 }
-
 interface TaskRemark {
   id: string;
   task_id: string;
@@ -49,13 +46,12 @@ interface TaskRemark {
   updated_by?: string;
   created_at: string;
 }
-
 export default function MemberDashboard() {
   const [memberUser, setMemberUser] = useState<any>(null);
   const [personalTasks, setPersonalTasks] = useState<Task[]>([]);
   const [teamMemberships, setTeamMemberships] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Dialog states
   const [remarks, setRemarks] = useState('');
   const [isRemarksDialogOpen, setIsRemarksDialogOpen] = useState(false);
@@ -63,10 +59,10 @@ export default function MemberDashboard() {
   const [existingRemarks, setExistingRemarks] = useState<TaskRemark[]>([]);
   const [pendingStatus, setPendingStatus] = useState<'completed' | 'cancelled' | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const navigate = useNavigate();
-
   useEffect(() => {
     // Check if user is logged in as member
     const storedUser = localStorage.getItem('member_user');
@@ -74,12 +70,10 @@ export default function MemberDashboard() {
       navigate('/members');
       return;
     }
-
     const user = JSON.parse(storedUser);
     setMemberUser(user);
     fetchData(user);
   }, [navigate]);
-
   const fetchData = async (user: any) => {
     try {
       setLoading(true);
@@ -89,23 +83,18 @@ export default function MemberDashboard() {
       let agentError = null;
 
       // Try exact phone match first
-      const { data: exactMatch, error: exactError } = await supabase
-        .from('agents')
-        .select('id, name, phone, role, panchayath_id')
-        .eq('phone', user.mobileNumber)
-        .maybeSingle();
-
+      const {
+        data: exactMatch,
+        error: exactError
+      } = await supabase.from('agents').select('id, name, phone, role, panchayath_id').eq('phone', user.mobileNumber).maybeSingle();
       if (exactMatch && !exactError) {
         agentData = exactMatch;
       } else {
         // Try name + panchayath match as fallback for Sajna's case
-        const { data: nameMatch, error: nameError } = await supabase
-          .from('agents')
-          .select('id, name, phone, role, panchayath_id')
-          .eq('name', user.name)
-          .eq('panchayath_id', user.panchayath_id)
-          .maybeSingle();
-
+        const {
+          data: nameMatch,
+          error: nameError
+        } = await supabase.from('agents').select('id, name, phone, role, panchayath_id').eq('name', user.name).eq('panchayath_id', user.panchayath_id).maybeSingle();
         if (nameMatch && !nameError) {
           agentData = nameMatch;
           console.log('Found agent by name + panchayath match:', nameMatch);
@@ -114,66 +103,60 @@ export default function MemberDashboard() {
           agentError = nameError || exactError;
         }
       }
-
       let personalTasksData = [];
       if (agentData && !agentError) {
         // Fetch personal tasks (tasks assigned to this agent ID)
-        const { data: tasksData, error: personalError } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('allocated_to_agent', agentData.id)
-          .order('created_at', { ascending: false });
-
+        const {
+          data: tasksData,
+          error: personalError
+        } = await supabase.from('tasks').select('*').eq('allocated_to_agent', agentData.id).order('created_at', {
+          ascending: false
+        });
         if (personalError) throw personalError;
         personalTasksData = tasksData || [];
       } else {
         // Also try with mobile number as fallback
-        const { data: tasksData, error: personalError } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('allocated_to_agent', user.mobileNumber)
-          .order('created_at', { ascending: false });
-
+        const {
+          data: tasksData,
+          error: personalError
+        } = await supabase.from('tasks').select('*').eq('allocated_to_agent', user.mobileNumber).order('created_at', {
+          ascending: false
+        });
         if (!personalError) {
           personalTasksData = tasksData || [];
         }
       }
-
       setPersonalTasks(personalTasksData || []);
 
       // Check team memberships for this agent (reuse agentData from above)
       let teamMemberData = [];
       if (agentData && !agentError) {
-        const { data: teamMemberQueryData, error: teamMemberError } = await supabase
-          .from('management_team_members')
-          .select(`
+        const {
+          data: teamMemberQueryData,
+          error: teamMemberError
+        } = await supabase.from('management_team_members').select(`
             *,
             management_teams(name, description)
-          `)
-          .eq('agent_id', agentData.id);
-
+          `).eq('agent_id', agentData.id);
         if (teamMemberError) throw teamMemberError;
         teamMemberData = teamMemberQueryData || [];
       }
-
       setTeamMemberships(teamMemberData);
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
         title: "Error",
         description: "Failed to fetch dashboard data",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
   };
-
   const handleLogout = () => {
     localStorage.removeItem('member_user');
     navigate('/');
   };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -186,7 +169,6 @@ export default function MemberDashboard() {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high':
@@ -203,36 +185,31 @@ export default function MemberDashboard() {
   // Action functions for tasks
   const handleStatusChange = async (task: Task, newStatus: 'completed' | 'cancelled') => {
     try {
-      const { error: taskError } = await supabase
-        .from('tasks')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', task.id);
-
+      const {
+        error: taskError
+      } = await supabase.from('tasks').update({
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      }).eq('id', task.id);
       if (taskError) throw taskError;
 
       // Add remarks if provided
       if (remarks.trim()) {
-        const { error: remarkError } = await supabase
-          .from('task_remarks')
-          .insert({
-            task_id: task.id,
-            remark: remarks.trim(),
-            updated_by: memberUser.name || memberUser.mobileNumber
-          });
-
+        const {
+          error: remarkError
+        } = await supabase.from('task_remarks').insert({
+          task_id: task.id,
+          remark: remarks.trim(),
+          updated_by: memberUser.name || memberUser.mobileNumber
+        });
         if (remarkError) {
           console.error('Error adding remark:', remarkError);
         }
       }
-
       toast({
         title: "Success",
-        description: `Task marked as ${newStatus}`,
+        description: `Task marked as ${newStatus}`
       });
-      
       setIsRemarksDialogOpen(false);
       setRemarks('');
       setPendingStatus(null);
@@ -243,30 +220,25 @@ export default function MemberDashboard() {
       toast({
         title: "Error",
         description: "Failed to update task status",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const handleAddRemark = async (task: Task) => {
     if (!remarks.trim()) return;
-    
     try {
-      const { error } = await supabase
-        .from('task_remarks')
-        .insert({
-          task_id: task.id,
-          remark: remarks.trim(),
-          updated_by: memberUser.name || memberUser.mobileNumber
-        });
-
+      const {
+        error
+      } = await supabase.from('task_remarks').insert({
+        task_id: task.id,
+        remark: remarks.trim(),
+        updated_by: memberUser.name || memberUser.mobileNumber
+      });
       if (error) throw error;
-
       toast({
         title: "Success",
-        description: "Remark added successfully",
+        description: "Remark added successfully"
       });
-      
       setIsRemarksDialogOpen(false);
       setRemarks('');
       setSelectedTask(null);
@@ -276,25 +248,23 @@ export default function MemberDashboard() {
       toast({
         title: "Error",
         description: "Failed to add remark",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const openRemarksDialog = (task: Task, status?: 'completed' | 'cancelled') => {
     setSelectedTask(task);
     setPendingStatus(status || null);
     setIsRemarksDialogOpen(true);
   };
-
   const fetchTaskRemarks = async (task: Task) => {
     try {
-      const { data, error } = await supabase
-        .from('task_remarks')
-        .select('*')
-        .eq('task_id', task.id)
-        .order('created_at', { ascending: false });
-      
+      const {
+        data,
+        error
+      } = await supabase.from('task_remarks').select('*').eq('task_id', task.id).order('created_at', {
+        ascending: false
+      });
       if (error) throw error;
       setExistingRemarks(data || []);
       setSelectedTask(task);
@@ -304,17 +274,14 @@ export default function MemberDashboard() {
       toast({
         title: "Error",
         description: "Failed to fetch task remarks",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
-
   const pendingPersonalTasks = personalTasks.filter(task => task.status === 'pending');
   const completedPersonalTasks = personalTasks.filter(task => task.status === 'completed');
-
   if (!memberUser) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <Card className="w-full max-w-md mx-auto">
           <CardHeader className="text-center">
             <CardTitle>Access Denied</CardTitle>
@@ -328,23 +295,17 @@ export default function MemberDashboard() {
             </Link>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p>Loading dashboard...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-gray-50">
+  return <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -353,19 +314,19 @@ export default function MemberDashboard() {
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Member Dashboard</h1>
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap bg-cyan-400">
                 <User className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
                 <span className="font-medium text-gray-900 text-sm sm:text-base">{memberUser.name}</span>
                 <Badge variant="secondary" className="text-xs">{memberUser.agent?.role}</Badge>
               </div>
               <div className="flex items-center gap-2">
                 <Link to="/">
-                  <Button variant="ghost" size="sm" className="text-xs sm:text-sm">
+                  <Button variant="ghost" size="sm" className="text-xs sm:text-sm text-slate-50 bg-slate-600 hover:bg-slate-500">
                     <Home className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                     Home
                   </Button>
                 </Link>
-                <Button variant="outline" size="sm" onClick={handleLogout} className="text-xs sm:text-sm">
+                <Button variant="outline" size="sm" onClick={handleLogout} className="text-xs sm:text-sm bg-[#ff0000]/[0.57]">
                   <LogOut className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                   Logout
                 </Button>
@@ -435,8 +396,7 @@ export default function MemberDashboard() {
         </Card>
 
         {/* Team Access Button */}
-        {teamMemberships.length > 0 && (
-          <Card className="mb-6">
+        {teamMemberships.length > 0 && <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
@@ -454,8 +414,7 @@ export default function MemberDashboard() {
                 </Button>
               </Link>
             </CardContent>
-          </Card>
-        )}
+          </Card>}
 
         {/* Personal Tasks */}
         <Card>
@@ -492,12 +451,9 @@ export default function MemberDashboard() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {pendingPersonalTasks.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
+                    {pendingPersonalTasks.length === 0 ? <div className="text-center py-8 text-gray-500">
                         No pending personal tasks found.
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto">
+                      </div> : <div className="overflow-x-auto">
                         <Table>
                           <TableHeader>
                             <TableRow>
@@ -511,8 +467,7 @@ export default function MemberDashboard() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {pendingPersonalTasks.map((task) => (
-                              <TableRow key={task.id}>
+                            {pendingPersonalTasks.map(task => <TableRow key={task.id}>
                                 <TableCell className="font-medium">{task.title}</TableCell>
                                 <TableCell className="max-w-xs truncate">{task.description || 'No description'}</TableCell>
                                 <TableCell>
@@ -533,50 +488,26 @@ export default function MemberDashboard() {
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex gap-1 flex-wrap">
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={() => fetchTaskRemarks(task)}
-                                      className="h-8 px-2 text-xs"
-                                    >
+                                    <Button size="sm" variant="ghost" onClick={() => fetchTaskRemarks(task)} className="h-8 px-2 text-xs">
                                       <Eye className="h-3 w-3" />
                                     </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => openRemarksDialog(task)}
-                                      className="h-8 px-2 text-xs"
-                                    >
+                                    <Button size="sm" variant="outline" onClick={() => openRemarksDialog(task)} className="h-8 px-2 text-xs">
                                       <MessageSquare className="h-3 w-3" />
                                     </Button>
-                                    {task.status === 'pending' && (
-                                      <>
-                                        <Button
-                                          size="sm"
-                                          variant="default"
-                                          onClick={() => openRemarksDialog(task, 'completed')}
-                                          className="bg-green-600 hover:bg-green-700 h-8 px-2 text-xs"
-                                        >
+                                    {task.status === 'pending' && <>
+                                        <Button size="sm" variant="default" onClick={() => openRemarksDialog(task, 'completed')} className="bg-green-600 hover:bg-green-700 h-8 px-2 text-xs">
                                           <CheckCircle className="h-3 w-3" />
                                         </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="destructive"
-                                          onClick={() => openRemarksDialog(task, 'cancelled')}
-                                          className="h-8 px-2 text-xs"
-                                        >
+                                        <Button size="sm" variant="destructive" onClick={() => openRemarksDialog(task, 'cancelled')} className="h-8 px-2 text-xs">
                                           <XCircle className="h-3 w-3" />
                                         </Button>
-                                      </>
-                                    )}
+                                      </>}
                                   </div>
                                 </TableCell>
-                              </TableRow>
-                            ))}
+                              </TableRow>)}
                           </TableBody>
                         </Table>
-                      </div>
-                    )}
+                      </div>}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -590,12 +521,9 @@ export default function MemberDashboard() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {completedPersonalTasks.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
+                    {completedPersonalTasks.length === 0 ? <div className="text-center py-8 text-gray-500">
                         No completed personal tasks found.
-                      </div>
-                    ) : (
-                      <div className="overflow-x-auto">
+                      </div> : <div className="overflow-x-auto">
                         <Table>
                           <TableHeader>
                             <TableRow>
@@ -608,8 +536,7 @@ export default function MemberDashboard() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {completedPersonalTasks.map((task) => (
-                              <TableRow key={task.id}>
+                            {completedPersonalTasks.map(task => <TableRow key={task.id}>
                                 <TableCell className="font-medium">{task.title}</TableCell>
                                 <TableCell className="max-w-xs truncate">{task.description || 'No description'}</TableCell>
                                 <TableCell>
@@ -628,12 +555,10 @@ export default function MemberDashboard() {
                                 <TableCell>
                                   {new Date(task.created_at).toLocaleDateString()}
                                 </TableCell>
-                              </TableRow>
-                            ))}
+                              </TableRow>)}
                           </TableBody>
                         </Table>
-                      </div>
-                    )}
+                      </div>}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -648,8 +573,7 @@ export default function MemberDashboard() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5" />
-              {pendingStatus === 'completed' ? 'Complete Task' : 
-               pendingStatus === 'cancelled' ? 'Cancel Task' : 'Add Remark'}
+              {pendingStatus === 'completed' ? 'Complete Task' : pendingStatus === 'cancelled' ? 'Cancel Task' : 'Add Remark'}
             </DialogTitle>
             <DialogDescription>
               {pendingStatus ? 'Add remarks about this task (optional)' : 'Add a remark to this task'}
@@ -659,43 +583,23 @@ export default function MemberDashboard() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="remarks">Remarks</Label>
-              <Textarea
-                id="remarks"
-                placeholder="Enter any comments or remarks about this task..."
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
-                rows={4}
-              />
+              <Textarea id="remarks" placeholder="Enter any comments or remarks about this task..." value={remarks} onChange={e => setRemarks(e.target.value)} rows={4} />
             </div>
             
             <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsRemarksDialogOpen(false);
-                  setRemarks('');
-                  setPendingStatus(null);
-                  setSelectedTask(null);
-                }}
-              >
+              <Button variant="outline" onClick={() => {
+              setIsRemarksDialogOpen(false);
+              setRemarks('');
+              setPendingStatus(null);
+              setSelectedTask(null);
+            }}>
                 Cancel
               </Button>
-              {pendingStatus ? (
-                <Button
-                  onClick={() => selectedTask && handleStatusChange(selectedTask, pendingStatus)}
-                  className={pendingStatus === 'completed' ? 'bg-green-600 hover:bg-green-700' : ''}
-                  variant={pendingStatus === 'completed' ? 'default' : 'destructive'}
-                >
+              {pendingStatus ? <Button onClick={() => selectedTask && handleStatusChange(selectedTask, pendingStatus)} className={pendingStatus === 'completed' ? 'bg-green-600 hover:bg-green-700' : ''} variant={pendingStatus === 'completed' ? 'default' : 'destructive'}>
                   {pendingStatus === 'completed' ? 'Complete Task' : 'Cancel Task'}
-                </Button>
-              ) : (
-                <Button 
-                  onClick={() => selectedTask && handleAddRemark(selectedTask)}
-                  disabled={!remarks.trim()}
-                >
+                </Button> : <Button onClick={() => selectedTask && handleAddRemark(selectedTask)} disabled={!remarks.trim()}>
                   Add Remark
-                </Button>
-              )}
+                </Button>}
             </div>
           </div>
         </DialogContent>
@@ -715,11 +619,7 @@ export default function MemberDashboard() {
           </DialogHeader>
           
           <div className="space-y-4 max-h-96 overflow-y-auto">
-            {existingRemarks.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">No remarks found for this task.</p>
-            ) : (
-              existingRemarks.map((remark) => (
-                <div key={remark.id} className="border rounded-lg p-3 bg-gray-50">
+            {existingRemarks.length === 0 ? <p className="text-gray-500 text-center py-4">No remarks found for this task.</p> : existingRemarks.map(remark => <div key={remark.id} className="border rounded-lg p-3 bg-gray-50">
                   <div className="flex justify-between items-start mb-2">
                     <Badge variant="outline">{remark.updated_by}</Badge>
                     <span className="text-xs text-gray-500">
@@ -727,21 +627,15 @@ export default function MemberDashboard() {
                     </span>
                   </div>
                   <p className="text-gray-700">{remark.remark}</p>
-                </div>
-              ))
-            )}
+                </div>)}
           </div>
           
           <div className="flex justify-end">
-            <Button
-              variant="outline"
-              onClick={() => setIsViewRemarksDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsViewRemarksDialogOpen(false)}>
               Close
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-    </div>
-  );
+    </div>;
 }
