@@ -94,6 +94,11 @@ export const useSupabaseHierarchy = (filterPanchayathId?: string) => {
       if (agentsRes.error) throw agentsRes.error;
       if (teamLeadersRes.error) throw teamLeadersRes.error;
 
+      console.log('Fetched panchayaths:', panchayathsRes.data);
+      console.log('Fetched agents:', agentsRes.data);
+      console.log('Fetched team leaders:', teamLeadersRes.data);
+      console.log('Applied panchayath filter:', panchayathFilter);
+
       setPanchayaths(panchayathsRes.data || []);
       setAgents(agentsRes.data || []);
       setTeamLeaders(teamLeadersRes.data || []);
