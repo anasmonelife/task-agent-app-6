@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Building2, Plus, Users, Edit, Trash2, UserPlus } from "lucide-react";
+import { Building2, Plus, Users, Edit, Trash2, UserPlus, Settings } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { AddMemberForm } from './AddMemberForm';
@@ -333,10 +333,19 @@ const TeamManagement = () => {
                 Manage teams and their settings
               </CardDescription>
             </div>
-            <Button onClick={() => setIsDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Team
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.href = '/admin'}
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Admin Panel
+              </Button>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Team
+              </Button>
+            </div>
           </div>
         </CardHeader>
       </Card>
