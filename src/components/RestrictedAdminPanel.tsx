@@ -26,9 +26,9 @@ const RestrictedAdminPanel = () => {
     return null;
   }
 
-  // Define permission-based card mapping
+  // Define permission-based card mapping using actual database permission names
   const permissionCardMap = {
-    'team_management': {
+    'teams.view': {
       id: 'teams',
       title: 'Team Management',
       description: 'Manage team settings and configuration',
@@ -37,7 +37,25 @@ const RestrictedAdminPanel = () => {
       bgColor: 'bg-purple-50',
       component: <TeamManagement />
     },
-    'task_management': {
+    'teams.create': {
+      id: 'teams',
+      title: 'Team Management',
+      description: 'Manage team settings and configuration',
+      icon: Building2,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      component: <TeamManagement />
+    },
+    'teams.edit': {
+      id: 'teams',
+      title: 'Team Management',
+      description: 'Manage team settings and configuration',
+      icon: Building2,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      component: <TeamManagement />
+    },
+    'tasks.view': {
       id: 'tasks',
       title: 'Task Management',
       description: 'Create and manage team tasks',
@@ -46,7 +64,34 @@ const RestrictedAdminPanel = () => {
       bgColor: 'bg-indigo-50',
       component: <EnhancedTaskManagement />
     },
-    'reports_view': {
+    'tasks.create': {
+      id: 'tasks',
+      title: 'Task Management',
+      description: 'Create and manage team tasks',
+      icon: CheckSquare,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
+      component: <EnhancedTaskManagement />
+    },
+    'tasks.edit': {
+      id: 'tasks',
+      title: 'Task Management',
+      description: 'Create and manage team tasks',
+      icon: CheckSquare,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
+      component: <EnhancedTaskManagement />
+    },
+    'tasks.assign': {
+      id: 'tasks',
+      title: 'Task Management',
+      description: 'Create and manage team tasks',
+      icon: CheckSquare,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
+      component: <EnhancedTaskManagement />
+    },
+    'reports.view': {
       id: 'reports',
       title: 'Reports',
       description: 'View team performance reports',
@@ -55,7 +100,7 @@ const RestrictedAdminPanel = () => {
       bgColor: 'bg-pink-50',
       component: <AdminReports />
     },
-    'member_management': {
+    'users.view': {
       id: 'users',
       title: 'Member Management',
       description: 'Add and manage team members',
@@ -64,7 +109,25 @@ const RestrictedAdminPanel = () => {
       bgColor: 'bg-green-50',
       component: <UserManagement />
     },
-    'hierarchy_view': {
+    'users.create': {
+      id: 'users',
+      title: 'Member Management',
+      description: 'Add and manage team members',
+      icon: Users,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      component: <UserManagement />
+    },
+    'users.edit': {
+      id: 'users',
+      title: 'Member Management',
+      description: 'Add and manage team members',
+      icon: Users,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      component: <UserManagement />
+    },
+    'hierarchy.view': {
       id: 'hierarchy',
       title: 'Hierarchy View',
       description: 'View organizational hierarchy',
@@ -73,7 +136,7 @@ const RestrictedAdminPanel = () => {
       bgColor: 'bg-cyan-50',
       component: <div className="p-4"><AdminHierarchyDetails /></div>
     },
-    'panchayath_notes': {
+    'panchayath.notes.manage': {
       id: 'panchayath-notes',
       title: 'Panchayath Notes',
       description: 'Manage panchayath notes and documentation',
@@ -82,7 +145,7 @@ const RestrictedAdminPanel = () => {
       bgColor: 'bg-amber-50',
       component: <div className="p-4"><PanchayathNotes /></div>
     },
-    'settings': {
+    'panchayaths.view': {
       id: 'panchayaths',
       title: 'Panchayath Settings',
       description: 'Configure panchayath data',
@@ -91,7 +154,43 @@ const RestrictedAdminPanel = () => {
       bgColor: 'bg-teal-50',
       component: <PanchayathManagement />
     },
-    'chat': {
+    'panchayaths.create': {
+      id: 'panchayaths',
+      title: 'Panchayath Settings',
+      description: 'Configure panchayath data',
+      icon: Settings,
+      color: 'text-teal-600',
+      bgColor: 'bg-teal-50',
+      component: <PanchayathManagement />
+    },
+    'panchayaths.edit': {
+      id: 'panchayaths',
+      title: 'Panchayath Settings',
+      description: 'Configure panchayath data',
+      icon: Settings,
+      color: 'text-teal-600',
+      bgColor: 'bg-teal-50',
+      component: <PanchayathManagement />
+    },
+    'notifications.view': {
+      id: 'notifications',
+      title: 'Team Communications',
+      description: 'Team notifications and communications',
+      icon: Bell,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50',
+      component: <AdminNotifications />
+    },
+    'notifications.manage': {
+      id: 'notifications',
+      title: 'Team Communications',
+      description: 'Team notifications and communications',
+      icon: Bell,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50',
+      component: <AdminNotifications />
+    },
+    'notifications.send': {
       id: 'notifications',
       title: 'Team Communications',
       description: 'Team notifications and communications',
@@ -115,8 +214,8 @@ const RestrictedAdminPanel = () => {
     }
   ];
 
-  // Add member approvals if user has member management permission
-  if (adminUser.permissions?.includes('member_management')) {
+  // Add member approvals if user has user management permission
+  if (adminUser.permissions?.some(p => p.startsWith('users.'))) {
     defaultCards.push({
       id: 'approvals',
       title: 'Member Approvals',
@@ -130,9 +229,16 @@ const RestrictedAdminPanel = () => {
 
   // Get available cards based on permissions
   const getAvailableCards = () => {
-    const permissionCards = (adminUser.permissions || [])
-      .map(permission => permissionCardMap[permission as keyof typeof permissionCardMap])
-      .filter(Boolean);
+    const permissionCards: any[] = [];
+    const addedIds = new Set<string>();
+    
+    (adminUser.permissions || []).forEach(permission => {
+      const card = permissionCardMap[permission as keyof typeof permissionCardMap];
+      if (card && !addedIds.has(card.id)) {
+        permissionCards.push(card);
+        addedIds.add(card.id);
+      }
+    });
 
     return [...defaultCards, ...permissionCards];
   };
