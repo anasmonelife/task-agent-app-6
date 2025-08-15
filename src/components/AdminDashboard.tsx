@@ -148,16 +148,6 @@ export const AdminDashboard = () => {
       bgColor: "bg-indigo-50",
     },
     {
-      title: "Hierarchy Details",
-      value: "View",
-      icon: GitBranch,
-      description: "Agent hierarchy structure",
-      color: "text-cyan-600",
-      bgColor: "bg-cyan-50",
-      isAction: true,
-      actionComponent: "hierarchy"
-    },
-    {
       title: "Panchayath Notes",
       value: stats.totalNotes,
       icon: FileText,
@@ -196,8 +186,7 @@ export const AdminDashboard = () => {
         {statCards.map((card, index) => (
           <Card 
             key={index} 
-            className={`hover:shadow-md transition-shadow ${card.title === "Hierarchy Details" ? "cursor-pointer" : ""}`}
-            onClick={card.title === "Hierarchy Details" ? () => navigate('/view-hierarchy') : undefined}
+            className="hover:shadow-md transition-shadow"
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
