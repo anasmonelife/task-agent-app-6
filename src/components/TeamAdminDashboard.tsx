@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Users, BarChart3, Calendar, MessageSquare, Settings, FileText, Eye, Shield } from "lucide-react";
+import { ArrowLeft, Users, BarChart3, Calendar, MessageSquare, Settings, FileText, Eye, Shield, Cog } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -299,6 +299,14 @@ const TeamAdminDashboard: React.FC<TeamAdminDashboardProps> = ({ teamId }) => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/admin')}
+              >
+                <Cog className="h-4 w-4 mr-2" />
+                Admin Panel
+              </Button>
               <Badge variant={team.is_active ? "default" : "secondary"}>
                 {team.is_active ? "Active" : "Inactive"}
               </Badge>
