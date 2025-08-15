@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Building2, Plus, Users, Edit, Trash2, UserPlus, Settings } from "lucide-react";
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { AddMemberForm } from './AddMemberForm';
 
 interface Team {
@@ -61,6 +62,7 @@ const TeamManagement = () => {
     is_active: true,
   });
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchData();
@@ -336,7 +338,7 @@ const TeamManagement = () => {
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
-                onClick={() => window.location.href = '/admin'}
+                onClick={() => navigate('/admin')}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Admin Panel
