@@ -8,6 +8,13 @@ import { ArrowLeft, Users, BarChart3, Calendar, MessageSquare, Settings, FileTex
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSupabaseHierarchy } from "@/hooks/useSupabaseHierarchy";
+import { OrganizationChartView } from "@/components/OrganizationChartView";
+import { HorizontalOrganizationChart } from "@/components/HorizontalOrganizationChart";
+import { HierarchyTable } from "@/components/HierarchyTable";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Search, TreePine, Table as TableIcon } from "lucide-react";
 
 interface Team {
   id: string;
@@ -70,10 +77,14 @@ const TeamAdminDashboard: React.FC<TeamAdminDashboardProps> = ({ teamId }) => {
   const [teamTasks, setTeamTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedPanchayath, setSelectedPanchayath] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [hierarchyView, setHierarchyView] = useState<'chart' | 'compact' | 'table'>('chart');
   
   const { toast } = useToast();
   const navigate = useNavigate();
   const params = useParams();
+  const { panchayaths, agents, refetch: refetchHierarchy } = useSupabaseHierarchy();
   
   const currentTeamId = teamId || params.teamId;
 
@@ -431,8 +442,151 @@ const TeamAdminDashboard: React.FC<TeamAdminDashboardProps> = ({ teamId }) => {
             </Card>
           </TabsContent>
 
-          {/* Dynamic permission-based tabs would be rendered here */}
-          {getEnabledTabs().slice(1).map((tab) => (
+          {/* Hierarchy View Tab */}
+          {hasPermission('hierarchy_view') && (
+            <TabsContent value="hierarchy_view">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Eye className="h-5 w-5" />
+                    Hierarchy View
+                  </CardTitle>
+                  <CardDescription>
+                    View organizational hierarchy for all panchayaths
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Panchayath Selection */}
+                  <div className="flex gap-4 items-end">
+                    <div className="flex-1">
+                      <label className="text-sm font-medium mb-2 block">Select Panchayath</label>
+                      <Select value={selectedPanchayath} onValueChange={setSelectedPanchayath}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Choose a panchayath to view hierarchy" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {panchayaths.length === 0 ? (
+                            <SelectItem value="none" disabled>No panchayaths available</SelectItem>
+                          ) : (
+                            panchayaths.map((panchayath) => (
+                              <SelectItem key={panchayath.id} value={panchayath.id}>
+                                {panchayath.name} - {panchayath.district}, {panchayath.state}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {selectedPanchayath && (
+                    <>
+                      {/* Search Bar */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                        <Input
+                          placeholder="Search agents by name or mobile number..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+
+                      {/* View Mode Selection */}
+                      <div className="flex gap-2">
+                        <Button 
+                          variant={hierarchyView === 'chart' ? "default" : "outline"} 
+                          size="sm"
+                          onClick={() => setHierarchyView('chart')}
+                          className="flex items-center gap-2"
+                        >
+                          <BarChart3 className="h-4 w-4" />
+                          Chart View
+                        </Button>
+                        <Button 
+                          variant={hierarchyView === 'compact' ? "default" : "outline"} 
+                          size="sm"
+                          onClick={() => setHierarchyView('compact')}
+                          className="flex items-center gap-2"
+                        >
+                          <TreePine className="h-4 w-4" />
+                          Compact View
+                        </Button>
+                        <Button 
+                          variant={hierarchyView === 'table' ? "default" : "outline"} 
+                          size="sm"
+                          onClick={() => setHierarchyView('table')}
+                          className="flex items-center gap-2"
+                        >
+                          <TableIcon className="h-4 w-4" />
+                          Table View
+                        </Button>
+                      </div>
+
+                      {/* Hierarchy Content */}
+                      <div className="border rounded-lg p-4 bg-card">
+                        {(() => {
+                          const selectedPanchayathData = panchayaths.find(p => p.id === selectedPanchayath);
+                          const filteredAgents = agents
+                            .filter(agent => agent.panchayath_id === selectedPanchayath)
+                            .filter(agent => 
+                              agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              (agent.phone && agent.phone.includes(searchQuery))
+                            );
+
+                          if (!selectedPanchayathData) return null;
+
+                          const panchayathName = `${selectedPanchayathData.name} - ${selectedPanchayathData.district}, ${selectedPanchayathData.state}`;
+
+                          switch (hierarchyView) {
+                            case 'chart':
+                              return (
+                                <OrganizationChartView 
+                                  panchayathId={selectedPanchayath}
+                                  agents={filteredAgents}
+                                  panchayathName={panchayathName}
+                                />
+                              );
+                            case 'compact':
+                              return (
+                                <HorizontalOrganizationChart 
+                                  panchayathId={selectedPanchayath}
+                                  agents={filteredAgents}
+                                  panchayathName={panchayathName}
+                                  onRefresh={refetchHierarchy}
+                                />
+                              );
+                            case 'table':
+                              return (
+                                <HierarchyTable 
+                                  agents={filteredAgents}
+                                  panchayathName={panchayathName}
+                                />
+                              );
+                            default:
+                              return null;
+                          }
+                        })()}
+                      </div>
+                    </>
+                  )}
+
+                  {panchayaths.length === 0 && (
+                    <div className="text-center py-12">
+                      <TreePine className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-foreground mb-2">No Panchayaths Found</h3>
+                      <p className="text-muted-foreground">
+                        No panchayaths have been added yet. Contact your administrator to add panchayaths and agents.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {/* Other Dynamic Permission-based Tabs */}
+          {getEnabledTabs().slice(1).filter(tab => tab.key !== 'hierarchy_view').map((tab) => (
             <TabsContent key={tab.key} value={tab.key}>
               <Card>
                 <CardHeader>
@@ -445,7 +599,6 @@ const TeamAdminDashboard: React.FC<TeamAdminDashboardProps> = ({ teamId }) => {
                     {tab.key === 'task_management' && 'Create and manage team tasks'}
                     {tab.key === 'reports_view' && 'View team performance reports'}
                     {tab.key === 'member_management' && 'Add and remove team members'}
-                    {tab.key === 'hierarchy_view' && 'View organizational hierarchy'}
                     {tab.key === 'panchayath_notes' && 'Manage panchayath notes and documentation'}
                     {tab.key === 'settings' && 'Configure team settings'}
                     {tab.key === 'chat' && 'Team communication and chat'}
