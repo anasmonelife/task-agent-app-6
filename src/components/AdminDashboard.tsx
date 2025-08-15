@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Building2, CheckSquare, UserCheck, TrendingUp, GitBranch, FileText } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import { HierarchyTable } from "@/components/HierarchyTable";
+import { AdminHierarchyDetails } from "@/components/AdminHierarchyDetails";
 import { PanchayathNotes } from "@/components/PanchayathNotes";
 
 interface DashboardStats {
@@ -262,18 +262,7 @@ export const AdminDashboard = () => {
 
       {/* Detailed Views Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <GitBranch className="h-5 w-5" />
-              Hierarchy Management
-            </CardTitle>
-            <CardDescription>View and manage agent hierarchy structure</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <HierarchyTable agents={[]} panchayathName="All Panchayaths" />
-          </CardContent>
-        </Card>
+        <AdminHierarchyDetails />
 
         <Card>
           <CardHeader>
