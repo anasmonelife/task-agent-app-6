@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Users, Calendar, MessageSquare, Eye, CheckCircle, XCircle, ArrowLeft, Send } from "lucide-react";
+import { Users, Calendar, MessageSquare, Eye, CheckCircle, XCircle, ArrowLeft, Send, Shield } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -418,9 +418,17 @@ export default function TeamPage() {
               </Link>
               <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
             </div>
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-gray-600" />
-              <span className="font-medium text-gray-900">{teamMemberships[0]?.management_teams?.name}</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-gray-600" />
+                <span className="font-medium text-gray-900">{teamMemberships[0]?.management_teams?.name}</span>
+              </div>
+              <Link to="/admin" className="text-blue-600 hover:text-blue-800">
+                <Button variant="outline" size="sm">
+                  <Shield className="h-4 w-4 mr-2" />
+                  All View
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
