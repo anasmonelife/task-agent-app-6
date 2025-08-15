@@ -18,7 +18,7 @@ import AdminReports from "@/components/AdminReports";
 import AdminNotifications from "@/components/AdminNotifications";
 import AdminSettings from "@/components/AdminSettings";
 import AgentPointsPage from "@/pages/AgentPointsPage";
-import { HierarchyTable } from "@/components/HierarchyTable";
+import { AdminHierarchyDetails } from "@/components/AdminHierarchyDetails";
 import { PanchayathNotes } from "@/components/PanchayathNotes";
 
 const AdminPanelContent = () => {
@@ -113,12 +113,12 @@ const AdminPanelContent = () => {
     },
     {
       id: 'hierarchy',
-      title: 'Hierarchy Details',
-      description: 'Manage agent hierarchy structure',
+      title: 'View Hierarchy',
+      description: 'Complete hierarchy with charts and filters',
       icon: GitBranch,
       color: 'text-cyan-600',
       bgColor: 'bg-cyan-50',
-      component: <div className="p-4"><HierarchyTable agents={[]} panchayathName="All Panchayaths" /></div>
+      component: <div className="p-4"><AdminHierarchyDetails /></div>
     },
     {
       id: 'panchayath-notes',
