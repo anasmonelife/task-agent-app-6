@@ -4,8 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Building2, CheckSquare, UserCheck, TrendingUp, GitBranch, FileText } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import { AdminHierarchyDetails } from "@/components/AdminHierarchyDetails";
 import { PanchayathNotes } from "@/components/PanchayathNotes";
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardStats {
   totalUsers: number;
@@ -27,6 +27,7 @@ export const AdminDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboardStats();
@@ -193,7 +194,11 @@ export const AdminDashboard = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {statCards.map((card, index) => (
-          <Card key={index} className="hover:shadow-md transition-shadow">
+          <Card 
+            key={index} 
+            className={`hover:shadow-md transition-shadow ${card.title === "Hierarchy Details" ? "cursor-pointer" : ""}`}
+            onClick={card.title === "Hierarchy Details" ? () => navigate('/view-hierarchy') : undefined}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
               <div className={`p-2 rounded-full ${card.bgColor}`}>
@@ -261,9 +266,7 @@ export const AdminDashboard = () => {
       </div>
 
       {/* Detailed Views Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AdminHierarchyDetails />
-
+      <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
