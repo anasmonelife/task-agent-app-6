@@ -169,7 +169,7 @@ const AdminTeamPermissions = () => {
                 <SelectValue placeholder="All teams" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All teams</SelectItem>
+                <SelectItem value="all">All teams</SelectItem>
                 {teams.map((team) => (
                   <SelectItem key={team.id} value={team.id}>
                     {team.name}
@@ -186,7 +186,7 @@ const AdminTeamPermissions = () => {
           ) : (
             <div className="space-y-6">
               {teams
-                .filter(team => !selectedTeam || team.id === selectedTeam)
+                .filter(team => !selectedTeam || selectedTeam === 'all' || team.id === selectedTeam)
                 .map((team) => (
                   <Card key={team.id} className="border-l-4 border-l-primary">
                     <CardHeader>
