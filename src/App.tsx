@@ -46,7 +46,7 @@ function App() {
               <Route path="/task-management" element={<MemberTaskManagement />} />
               <Route path="/panchayath-notes" element={<PanchayathNotes />} />
               <Route path="/admin/*" element={<AdminPanel />} />
-              <Route path="/agent-admin/*" element={<AgentAdminPanel />} />
+              <Route path="/agent-admin" element={<AgentAdminPanel />} />
               <Route path="/members" element={<MembersLogin />} />
               <Route path="/member-dashboard" element={<MemberDashboard />} />
               <Route path="/team" element={<TeamPage />} />
